@@ -28,6 +28,30 @@
   color: #61dafb;
 }
 
+.form-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin-right: 15px;
+}
+
+.form-wrapper div {
+  margin-bottom: 5px;
+}
+
+.form-fields {
+  display: flex;
+}
+
+.form-input {
+  float: right;
+  width: 80px;
+  margin-left: 10px;
+}
+
+.form-button {
+  margin: 10px 0;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);

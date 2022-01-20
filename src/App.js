@@ -3,16 +3,19 @@ import * as THREE from "three";
 import { Earcut } from "three/src/extras/Earcut";
 import { Canvas } from "react-three-fiber";
 import CameraControls from "./CameraControls";
+import { Form } from './Form';
+import { defaultParams } from './defaultValues';
 
 THREE.Object3D.DefaultUp.set(0, 0, 1);
 
-async function loadData() {
+async function loadData(payload) {
   const response = await fetch(
-    `/buildings.json`, {
-      method: 'GET',
+    `https://cchvf3mkzi.execute-api.eu-west-1.amazonaws.com/dev/build`, {
+      method: 'POST',
       headers: {
         Accept: 'application/json',
-      }
+      },
+      body: JSON.stringify(payload)
     },
   );
 
@@ -142,9 +145,10 @@ export default function App() {
 
   const [buildingGeometries, setBuildingGeometries] = useState();
   const [sampleGeometries, setSampleGeometries] = useState([]);
+  const [payload, setPayload] = useState(defaultParams);
 
   useEffect(() => {
-    loadData()
+    loadData(payload) // using default values for first load
       .then(data => generateBuildingGeometriesFromData(data))
       .then(geometries => setBuildingGeometries(geometries));
   }, []);
@@ -164,29 +168,44 @@ export default function App() {
             ],
             "hotpink"
           ),
-          createText("sample", "purple", font, [0, 10000, 10000])
+          createText("sample", "purple", font, [0, 10000, 10000]),
         ]);
       });
   }, []);
 
+  const handleChange = (e, index) => {
+    const newArr = [...payload];
+    newArr[index] = {...newArr[index], [e.target.name]: e.target.value};
+    setPayload(newArr);
+  }
+
+  const handleSubmit = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    loadData(payload)
+      .then(data => generateBuildingGeometriesFromData(data))
+      .then(geometries => setBuildingGeometries(geometries));
+  }
+
   return (
-    <Canvas style = {{ height: 600 }}
-    camera = {{
-      up: [0, 0, 1],
-      position: [20000, 20000, 20000],
-      near: 1000,
-      far: 400000,
-      fov: 70
-    }}
-    onCreated = {({ gl }) => {
-      gl.setClearColor("#eeeeee");
-    }}>
-      <ambientLight intensity={ 1.0 } />
-      <directionalLight intensity={ 0.2 } position = { [1, 1, 1] } />
-      <Group
-        items={ sampleGeometries }
-      />
-      { buildingGeometries && buildingGeometries.length > 0 &&
+    <>
+      <Canvas style = {{ height: 600 }}
+        camera = {{
+          up: [0, 0, 1],
+          position: [20000, 20000, 20000],
+          near: 1000,
+          far: 400000,
+          fov: 70
+        }}
+        onCreated = {({ gl }) => {
+          gl.setClearColor("#eeeeee");
+        }}>
+        <ambientLight intensity={ 1.0 } />
+        <directionalLight intensity={ 0.2 } position = { [1, 1, 1] } />
+        <Group
+          items={ sampleGeometries }
+        />
+        { buildingGeometries && buildingGeometries.length > 0 &&
         buildingGeometries.map((buildingGeometry, index) => {
           return <primitive
             key={ index }
@@ -195,8 +214,24 @@ export default function App() {
             onPointerOver={ e => console.log("onPointerOver") }
             onPointerOut={ e => console.log("onPointerOut") } />;
         })
-      }
-      <CameraControls / >
-    </Canvas>
+        }
+        <CameraControls/>
+      </Canvas>
+
+      <div className="form-fields">
+        {payload.map((item, index) => {
+          return (
+            <Form
+              key={index} // I know it's not good to do that :)
+              index={index}
+              labelText={`Change params for ${index + 1} figure`}
+              item={item}
+              handleChange={handleChange}
+            />
+          )
+        })}
+      </div>
+      <button className="form-button" onClick={e => handleSubmit(e)}>Submit</button>
+    </>
   );
 }
